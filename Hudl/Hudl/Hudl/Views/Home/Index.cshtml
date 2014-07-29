@@ -1,0 +1,124 @@
+﻿@model Hudl.ViewModel.DefaultViewModel.DefaultViewModel
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        
+        <link rel="stylesheet" href="~/Content/styles.css" />
+        <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/themes/smoothness/jquery-ui.css" />
+        
+        <script src="https://apis.google.com/js/client.js?onload=handleClientLoad"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js"></script>
+        <script src="~/Scripts/Google.js"></script>
+        <script src="~/Scripts/alerts.js"></script>
+
+        <meta name="viewport" content="width=device-width" />
+        <title>Concert</title>
+    </head>
+
+    <body>
+        <div><img src="~/Content/Images/curtains_closing.jpg" width="100%" height="200em"></div>
+        <div class="title">
+            @Model.Calendar.MonthYear
+            <span class="signIn" id="signinButton">
+                <span class="g-signin"
+                      data-callback="signinCallback"
+                      data-clientid="1071645370589-acdsg7rjbsk7dn5lecfbk83k9uh8fnaa.apps.googleusercontent.com"
+                      data-cookiepolicy="single_host_origin"
+                      data-scope="https://www.googleapis.com/auth/calendar">
+                </span>
+            </span>
+        </div>
+        
+        <div class="alert" id="success" title="Event Added">
+            <p>The event has been successfully added to your calendar.</p>
+        </div>
+        <div class="alert" id="failed" title="Insert Failed">
+            <p>Insert of event failed. Please try again later.</p>            
+        </div>
+        <div class="alert" id="error" title="Must Login">
+            <p>You must login to Google+ before you can add an event to your calendar.</p>
+        </div>
+
+        <table border="1">
+            <tr>
+                @foreach (var day in Model.Calendar.Days){
+                    <th>@day</th>
+                }
+            </tr>
+            @{
+                var i = 1;
+                var j = 0;
+                while (i <= Model.Calendar.DaysInMonth)
+                {
+                    if (j%7 == 0)
+                    {
+                        if (j > 0)
+                        {
+                            @:</tr>
+                        }
+                        @:<tr>
+                    }
+                    if (i == 1 && j < Model.Calendar.First)
+                    {
+                        <td><span class="date">&nbsp;</span></td>
+                    }
+                    else
+                    {
+                        <td><div class="date">
+                                @i
+                                @{
+                                    string k;
+                                    if (i/10 < 1)
+                                    {
+                                        k = "0" + i.ToString();
+                                    }
+                                    else
+                                    {
+                                        k = i.ToString();
+                                    }
+                                }
+                                @foreach (var concert in from concerts in Model.Concerts.Events.Values where concerts.Date.Substring(8, 2) == k select concerts)
+                                {
+                                    var location = (from local in Model.Concerts.Venue.Values where local.LocationId == concert.VenueId select local).FirstOrDefault();
+                                    <div class="truncate">
+                                        <a href="javascript: addEvent(this.authResult, '@concert.Artist', '@concert.Description', '@concert.Date', '@concert.StartTime', '@concert.EndTime', '@location.Address')">@concert.StartTime.Substring(0,5)</a>
+                                        @concert.Artist
+                                    </div>
+                                }    
+                            </div></td>
+                                i += 1;
+                    }
+                    j += 1;
+                }
+                while (j % 7 != 0)
+                {
+                    <td><div class="date">&nbsp;</div></td>
+                    j += 1;
+                }
+            }
+        </table>
+        <div class="instructions">
+            <p>Sign into Google+, then select an event time to add that event to your Google Calendar! <br/> Note: If you don't see the Google+ sign-in button, then your browser is already logged in.</p>
+        </div>
+        
+        <script type="text/javascript">
+            var authResult = null;
+            (function () {
+                var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
+                po.src = 'https://apis.google.com/js/client:plusone.js';
+                var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
+            })();
+            function signinCallback(authResult) {
+                if (authResult != null && authResult['status'] != null && authResult['status']['signed_in']) {
+                    this.authResult = authResult;
+                    document.getElementById('signinButton').setAttribute('style', 'display: none');
+                } else {
+                    console.log('Sign-in state: ' + authResult['error']);
+                }
+            };
+        </script>
+    </body>
+</html>
